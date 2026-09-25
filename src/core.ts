@@ -1,8 +1,4 @@
-interface HSV {
-  h: number;
-  s: number;
-  v: number;
-}
+import { HSV, normalizeHue } from './color';
 
 // 颜色从1-10，主色为第6个，前面有5个浅色，后面有4个深色
 export const hueStep = 2; // 色相阶梯
@@ -37,9 +33,7 @@ export const getHue = (hsv: HSV, i: number, isTop?: boolean): number => {
     hue = isTop ? Math.round(hsv.h) + hueStep * i : Math.round(hsv.h) - hueStep * i;
   }
 
-  (hue < 0 || hue >= 360) && (hue = Math.abs(Math.abs(hue) - 360));
-
-  return hue;
+  return normalizeHue(hue);
 };
 
 /**
@@ -84,6 +78,10 @@ export const getValue = (hsv: HSV, i: number, isTop?: boolean): number => {
   value = isTop ? hsv.v + topBrightnessLightStep * i : hsv.v - behindBrightnessStep * i;
 
   value > 1 && (value = 1);
+  value < 0 && (value = 0);
 
-  return Number(value.toFixed(2));
+  const rounded = Number(value.toFixed(2));
+
+  // 小基数明度四舍五入后会被截成 0，保留原值避免整组色塌成黑
+  return rounded === 0 && value > 0 ? value : rounded;
 };

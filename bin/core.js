@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getValue = exports.getSaturation = exports.getHue = exports.behindBrightnessStep = exports.topBrightnessLightStep = exports.behindSaturationStep = exports.topSaturationStep = exports.behindColorCount = exports.topColorCount = exports.hueStep = void 0;
+var color_1 = require("./color");
 // 颜色从1-10，主色为第6个，前面有5个浅色，后面有4个深色
 exports.hueStep = 2; // 色相阶梯
 exports.topColorCount = 5; // 主色前数量，浅色部分
@@ -29,8 +30,7 @@ var getHue = function (hsv, i, isTop) {
         // 1-10色相变化 => 色相从大到小 => 色相顺时针旋转 => 更暖
         hue = isTop ? Math.round(hsv.h) + exports.hueStep * i : Math.round(hsv.h) - exports.hueStep * i;
     }
-    (hue < 0 || hue >= 360) && (hue = Math.abs(Math.abs(hue) - 360));
-    return hue;
+    return (0, color_1.normalizeHue)(hue);
 };
 exports.getHue = getHue;
 /**
@@ -69,6 +69,9 @@ var getValue = function (hsv, i, isTop) {
     var value;
     value = isTop ? hsv.v + exports.topBrightnessLightStep * i : hsv.v - exports.behindBrightnessStep * i;
     value > 1 && (value = 1);
-    return Number(value.toFixed(2));
+    value < 0 && (value = 0);
+    var rounded = Number(value.toFixed(2));
+    // 小基数明度四舍五入后会被截成 0，保留原值避免整组色塌成黑
+    return rounded === 0 && value > 0 ? value : rounded;
 };
 exports.getValue = getValue;

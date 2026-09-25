@@ -73,6 +73,40 @@ $ color-generate g -c 099dfd -f
 import { generate } from 'color-generate'
 ```
 
+### Color Utils
+
+Pure color conversion helpers live in `src/color.ts` and are re-exported from the entry:
+
+```javascript
+import {
+  hexToRgb, rgbToHex, // hex <-> rgb（支持 3 位缩写、可带 #、大小写混合）
+  rgbToHsl, hslToRgb, rgbToHsv, hsvToRgb, // 颜色空间互转
+  adjustHue, adjustLightness, // 按色相 / 明度加减得到新色（色相取模、明度截断到 [0, 1]）
+  sortByLightness, // 一组颜色按明度从亮到暗排序
+  getContrast, pickForeground, // WCAG 对比度 / 从候选里挑对比度最高的前景色
+  isValidColor, // 判断字符串是否为合法颜色
+} from 'color-generate'
+```
+
+### CSS Variables
+
+`generateCssVariables` 把 `generate` 生成的 10 阶色板拼成 less / scss 变量块：
+
+```javascript
+import { generate, generateCssVariables } from 'color-generate'
+
+const colors = generate('#099dfd')
+
+generateCssVariables(colors, 'less') // @colorPrimary: #099dfd; ...
+generateCssVariables(colors, 'scss') // $colorPrimary: #099dfd; ...
+```
+
+### Test
+
+```bash
+npm run test # vitest
+```
+
 ### Broswer
 
 ```javascript

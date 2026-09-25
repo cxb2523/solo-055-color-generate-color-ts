@@ -1,12 +1,199 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>color-generate</title>
+    <title>color-generate 色块墙</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 32px 16px;
+        font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        background: #f0f2f5;
+        color: #1f1f1f;
+      }
+
+      .page {
+        max-width: 1080px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        font-size: 22px;
+        margin: 0 0 16px;
+      }
+
+      .picker {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+
+      .picker input[type='color'] {
+        width: 48px;
+        height: 32px;
+        padding: 0;
+        border: 1px solid #d9d9d9;
+        border-radius: 4px;
+        background: none;
+        cursor: pointer;
+      }
+
+      .picker input[type='text'] {
+        width: 120px;
+        height: 32px;
+        padding: 0 8px;
+        border: 1px solid #d9d9d9;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 14px;
+      }
+
+      .picker .error {
+        color: #f5222d;
+        font-size: 13px;
+      }
+
+      .theme {
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 24px;
+      }
+
+      .theme h2 {
+        font-size: 16px;
+        margin: 0 0 12px;
+      }
+
+      .theme-light {
+        background: #ffffff;
+        color: #1f1f1f;
+      }
+
+      .theme-dark {
+        background: #141414;
+        color: #f5f5f5;
+      }
+
+      .wall {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+        gap: 8px;
+      }
+
+      .swatch {
+        border-radius: 6px;
+        padding: 8px;
+        min-height: 72px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        font-family: monospace;
+        font-size: 12px;
+      }
+
+      .swatch .hex {
+        font-weight: 700;
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/examples/main.ts"></script>
+    <div class="page">
+      <h1>color-generate 色块墙</h1>
+
+      <div class="picker">
+        <label for="color-input">基色</label>
+        <input id="color-picker" type="color" value="#099dfd" aria-label="选择基色" />
+        <input id="color-input" type="text" value="#099dfd" maxlength="7" aria-label="输入基色十六进制值" />
+        <span class="error" id="color-error" role="alert" hidden>非法颜色，请输入 3 或 6 位十六进制</span>
+      </div>
+
+      <section class="theme theme-light" aria-labelledby="light-title">
+        <h2 id="light-title">浅色主题</h2>
+        <div class="wall" id="wall-light"></div>
+      </section>
+
+      <section class="theme theme-dark" aria-labelledby="dark-title">
+        <h2 id="dark-title">深色主题</h2>
+        <div class="wall" id="wall-dark"></div>
+      </section>
+    </div>
+
+    <script type="module">
+      import { generate, getContrast, isValidColor, pickForeground } from '/src/index.ts';
+
+      const THEMES = [
+        { name: '浅色主题', wallId: 'wall-light', background: '#ffffff' },
+        { name: '深色主题', wallId: 'wall-dark', background: '#141414' },
+      ];
+
+      const picker = document.getElementById('color-picker');
+      const input = document.getElementById('color-input');
+      const error = document.getElementById('color-error');
+
+      const renderTheme = (colors, theme) => {
+        const wall = document.getElementById(theme.wallId);
+        wall.innerHTML = '';
+
+        colors.forEach((color, index) => {
+          const contrast = getContrast(color, theme.background);
+          const foreground = pickForeground(color, ['#000000', '#ffffff']);
+
+          const swatch = document.createElement('div');
+          swatch.className = 'swatch';
+          swatch.style.backgroundColor = color;
+          swatch.style.color = foreground;
+          swatch.setAttribute(
+            'aria-label',
+            `${theme.name}第 ${index + 1} 阶色块，色值 ${color}，与背景对比度 ${contrast} 比 1`,
+          );
+
+          const hex = document.createElement('span');
+          hex.className = 'hex';
+          hex.textContent = color;
+          hex.setAttribute('aria-hidden', 'true');
+
+          const score = document.createElement('span');
+          score.textContent = `对比度 ${contrast}`;
+          score.setAttribute('aria-hidden', 'true');
+
+          swatch.append(hex, score);
+          wall.appendChild(swatch);
+        });
+      };
+
+      const render = (baseColor) => {
+        const colors = generate(baseColor);
+        THEMES.forEach((theme) => renderTheme(colors, theme));
+      };
+
+      const applyColor = (value, fromPicker) => {
+        const color = value.startsWith('#') ? value : `#${value}`;
+
+        if (!isValidColor(color)) {
+          error.hidden = false;
+          return;
+        }
+
+        error.hidden = true;
+        if (!fromPicker && color.length === 7) {
+          picker.value = color;
+        }
+        if (fromPicker) {
+          input.value = color;
+        }
+        render(color);
+      };
+
+      picker.addEventListener('input', (event) => applyColor(event.target.value, true));
+      input.addEventListener('input', (event) => applyColor(event.target.value.trim(), false));
+
+      render(input.value);
+    </script>
   </body>
 </html>
