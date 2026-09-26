@@ -1,12 +1,193 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>color-generate</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 32px;
+        font-family: -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background: #f5f7fa;
+        color: #5c6b77;
+      }
+
+      .title {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0 0 16px;
+      }
+
+      .picker {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+
+      .picker label {
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .picker input[type='color'] {
+        width: 48px;
+        height: 32px;
+        padding: 0;
+        border: 1px solid #d9dee3;
+        border-radius: 4px;
+        background: none;
+        cursor: pointer;
+      }
+
+      .picker input[type='text'] {
+        width: 120px;
+        height: 32px;
+        padding: 0 8px;
+        border: 1px solid #d9dee3;
+        border-radius: 4px;
+        font-size: 14px;
+        font-family: monospace;
+      }
+
+      .theme {
+        margin-bottom: 24px;
+        padding: 16px;
+        border-radius: 8px;
+      }
+
+      .theme-light {
+        background: #ffffff;
+        border: 1px solid #e4e9ee;
+      }
+
+      .theme-dark {
+        background: #141414;
+      }
+
+      .theme h2 {
+        margin: 0 0 12px;
+        font-size: 16px;
+      }
+
+      .theme-light h2 {
+        color: #5c6b77;
+      }
+
+      .theme-dark h2 {
+        color: #d9dee3;
+      }
+
+      .wall {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 8px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .swatch {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        height: 72px;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 13px;
+      }
+
+      .swatch .contrast {
+        font-size: 11px;
+        opacity: 0.85;
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/examples/main.ts"></script>
+    <h1 class="title">color-generate 色块墙</h1>
+
+    <div class="picker">
+      <label for="color-picker">基色</label>
+      <input type="color" id="color-picker" value="#099dfd" />
+      <input type="text" id="color-input" value="#099dfd" aria-label="基色十六进制值" />
+    </div>
+
+    <section class="theme theme-light" aria-labelledby="light-theme-title">
+      <h2 id="light-theme-title">浅色主题</h2>
+      <ul class="wall" id="light-wall"></ul>
+    </section>
+
+    <section class="theme theme-dark" aria-labelledby="dark-theme-title">
+      <h2 id="dark-theme-title">深色主题</h2>
+      <ul class="wall" id="dark-wall"></ul>
+    </section>
+
+    <script type="module">
+      import { generate, getContrast, pickContrastColor, adjustLightness, isValidColor } from '/src/index.ts';
+
+      const picker = document.getElementById('color-picker');
+      const input = document.getElementById('color-input');
+
+      const renderWall = (wallId, colors, themeName) => {
+        const wall = document.getElementById(wallId);
+        wall.innerHTML = '';
+
+        colors.forEach((color, index) => {
+          const foreground = pickContrastColor(color, ['#000000', '#ffffff']);
+          const contrast = getContrast(color, foreground);
+
+          const item = document.createElement('li');
+          item.className = 'swatch';
+          item.style.backgroundColor = color;
+          item.style.color = foreground;
+          item.setAttribute(
+            'aria-label',
+            `${themeName}第 ${index + 1} 级色块，颜色 ${color}，对比度 ${contrast} 比 1`,
+          );
+
+          const hexText = document.createElement('span');
+          hexText.textContent = color;
+          hexText.setAttribute('aria-hidden', 'true');
+
+          const contrastText = document.createElement('span');
+          contrastText.className = 'contrast';
+          contrastText.textContent = `对比度 ${contrast}:1`;
+          contrastText.setAttribute('aria-hidden', 'true');
+
+          item.appendChild(hexText);
+          item.appendChild(contrastText);
+          wall.appendChild(item);
+        });
+      };
+
+      const render = (baseColor) => {
+        if (!isValidColor(baseColor)) {
+          return;
+        }
+
+        renderWall('light-wall', generate(baseColor), '浅色主题');
+        renderWall('dark-wall', generate(adjustLightness(baseColor, 0.1)), '深色主题');
+      };
+
+      picker.addEventListener('input', () => {
+        input.value = picker.value;
+        render(picker.value);
+      });
+
+      input.addEventListener('input', () => {
+        if (isValidColor(input.value)) {
+          render(input.value);
+        }
+      });
+
+      render(picker.value);
+    </script>
   </body>
 </html>

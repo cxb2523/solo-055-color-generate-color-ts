@@ -40,7 +40,7 @@ program
         console.log(chalk_1.default.redBright('color option is must\nif you want primary color #099dfd, you should write `color-generate g -c 099dfd`\nif you want generate file, you should write `color-generate g -c 099dfd -f`'));
         return;
     }
-    var colors = (0, generate_1.generate)("#" + option.color);
+    var colors = (0, generate_1.generate)("#".concat(option.color));
     if (!option.file) {
         console.log(chalk_1.default.blueBright(colors));
         return;

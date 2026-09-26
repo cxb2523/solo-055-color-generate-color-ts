@@ -37,7 +37,8 @@ export const getHue = (hsv: HSV, i: number, isTop?: boolean): number => {
     hue = isTop ? Math.round(hsv.h) + hueStep * i : Math.round(hsv.h) - hueStep * i;
   }
 
-  (hue < 0 || hue >= 360) && (hue = Math.abs(Math.abs(hue) - 360));
+  // 色相取模到 [0, 360)，避免加减后溢出
+  hue = ((hue % 360) + 360) % 360;
 
   return hue;
 };
@@ -84,6 +85,7 @@ export const getValue = (hsv: HSV, i: number, isTop?: boolean): number => {
   value = isTop ? hsv.v + topBrightnessLightStep * i : hsv.v - behindBrightnessStep * i;
 
   value > 1 && (value = 1);
+  value < 0 && (value = 0);
 
   return Number(value.toFixed(2));
 };

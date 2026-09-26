@@ -29,7 +29,8 @@ var getHue = function (hsv, i, isTop) {
         // 1-10色相变化 => 色相从大到小 => 色相顺时针旋转 => 更暖
         hue = isTop ? Math.round(hsv.h) + exports.hueStep * i : Math.round(hsv.h) - exports.hueStep * i;
     }
-    (hue < 0 || hue >= 360) && (hue = Math.abs(Math.abs(hue) - 360));
+    // 色相取模到 [0, 360)，避免加减后溢出
+    hue = ((hue % 360) + 360) % 360;
     return hue;
 };
 exports.getHue = getHue;
@@ -69,6 +70,7 @@ var getValue = function (hsv, i, isTop) {
     var value;
     value = isTop ? hsv.v + exports.topBrightnessLightStep * i : hsv.v - exports.behindBrightnessStep * i;
     value > 1 && (value = 1);
+    value < 0 && (value = 0);
     return Number(value.toFixed(2));
 };
 exports.getValue = getValue;
